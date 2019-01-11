@@ -1,7 +1,7 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Base application theme. -->
-    <style name="TwitterTheme" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="MSPRTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="android:colorBackground">@color/colorAccent</item>
         <item name="colorPrimary">@color/colorPrimary</item>
@@ -15,10 +15,6 @@
         <!-- android:textColorPrimary is the  color of the title text
              in the Toolbar, in the Theme.AppCompat theme:  -->
         <item name="android:textColorPrimary">@color/colorText</item>
-
-        <!-- android:textColorPrimaryInverse is the  color of the title
-             text in the Toolbar, in the Theme.AppCompat.Light theme:  -->
-         <!--<item name="android:textColorPrimaryInverse">@color/colorText</item> -->
 
         <!-- android:actionMenuTextColor is the color of the text of
               action (menu) items in the Toolbar, at least in the
@@ -36,7 +32,7 @@
               but setting this also changes the popup menu's background,
               even if we define popupTheme for our <Toolbar> -->
         <!--<item name="android:background">@color/colorAccent</item>-->
-        <item name="android:backgroundTint">@color/colorAccentDark</item>
+        <item name="android:backgroundTint" tools:ignore="NewApi">@color/colorAccentDark</item>
 
     </style>
 

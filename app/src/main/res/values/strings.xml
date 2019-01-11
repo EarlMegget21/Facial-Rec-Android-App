@@ -1,16 +1,5 @@
 <resources>
-    <string name="app_name">MSPR</string>
+    <string name="app_name">Go Securi</string>
     <string name="slogan">Scannez la carte d\'identité pour identifier l\'arrivant</string>
-    <string name="make_sure_it_s_6_characters_or_more">Make sure it\'s 6 characters or more.</string>
-    <string name="password">Password</string>
-    <string name="you_ll_need_a_password">You\'ll need a password</string>
-    <string name="create_your_account">Create your account</string>
-    <string name="name">Name</string>
-    <string name="email_address">Email address</string>
-    <string name="next">Next</string>
     <string name="get_started">Prendre une photo</string>
-    <string name="welcome">Welcome</string>
-    <string name="launch">Launch</string>
-    <string name="email">email :</string>
-    <string name="tweeter_add">Tweeter</string>
 </resources>

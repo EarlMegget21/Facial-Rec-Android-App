@@ -1,16 +1,3 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <declare-styleable name="TweetView">
-        <attr name="author_login" format="string" />
-        <attr name="author_image" format="string"/>
-        <attr name="author_name" format="string"/>
-        <attr name="content_image" format="string"/>
-        <attr name="content_title" format="string"/>
-        <attr name="tweet_text" format="string"/>
-    </declare-styleable>
-
-    <declare-styleable name="ReactView">
-        <attr name="react_icon" format="string" />
-        <attr name="react_number" format="string"/>
-    </declare-styleable>
 </resources>
