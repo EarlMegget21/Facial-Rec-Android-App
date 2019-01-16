@@ -23,7 +23,6 @@
             </intent-filter>
         </activity>
         <activity android:name="com.epsi.mspr.activities.StartActivity" />
-        <activity android:name="com.epsi.mspr.activities.TakePictureActivity" />
         <activity android:name="com.epsi.mspr.activities.VerifyIDActivity" />
     </application>
 

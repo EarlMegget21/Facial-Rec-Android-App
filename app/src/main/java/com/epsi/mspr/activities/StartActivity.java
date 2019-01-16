@@ -24,7 +24,7 @@ public class StartActivity extends AppCompatActivity {
         ButterKnife.bind(this); //to inject the View objects
 
         buttonStartStart.setOnClickListener(view -> {
-            Intent createIntent = new Intent((Context) StartActivity.this, TakePictureActivity.class);
+            Intent createIntent = new Intent((Context) StartActivity.this, VerifyIDActivity.class);
             startActivity(createIntent);
         });
     }

@@ -13,17 +13,14 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
-        Runnable task=new Runnable() {
-            public void run() {
-                Intent startIntent = new Intent(SplashActivity.this, StartActivity.class);
+        Runnable task= () -> {
+            Intent startIntent = new Intent(SplashActivity.this, StartActivity.class);
 
-                startActivity(startIntent);
+            startActivity(startIntent);
 
-                SplashActivity.this.finish(); //pour plus qu'on puisse y revenir
-            }
+            SplashActivity.this.finish(); // to avoid the return button to come back here
         };
 
         findViewById(R.id.imageView).postDelayed(task, 5000); //pour que le thread se termine à OnDestroy sinon (avec un Handler) il faudra l'arrêter à la mains
-
     }
 }

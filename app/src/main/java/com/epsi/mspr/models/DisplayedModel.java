@@ -17,9 +17,19 @@ public class DisplayedModel<T> {
      */
     private String errorMessage;
 
-    public DisplayedModel(T successObject, String errorMessage) {
+    /**
+     * Error code that occured
+     */
+    private int errorCode;
+
+    public final static int NOT_FOUND = 1;
+    public final static int OTHER = 2;
+    public final static int NO_ERROR = 0;
+
+    public DisplayedModel(T successObject, String errorMessage, int errorCode) {
         this.successObject = successObject;
         this.errorMessage = errorMessage;
+        this.errorCode = errorCode;
     }
 
     public T getSuccessObject() {
@@ -28,5 +38,9 @@ public class DisplayedModel<T> {
 
     public String getErrorMessage() {
         return errorMessage;
+    }
+
+    public int getErrorCode() {
+        return errorCode;
     }
 }

@@ -1,25 +1,34 @@
 package com.epsi.mspr.activities;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.SparseArray;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.epsi.mspr.R;
+import com.epsi.mspr.archi.view_models.VerifyIDViewModel;
+import com.epsi.mspr.models.DisplayedModel;
+import com.epsi.mspr.models.IDCard;
 import com.google.android.gms.vision.Frame;
-import com.google.android.gms.vision.face.Face;
-import com.google.android.gms.vision.face.FaceDetector;
-import com.google.android.gms.vision.text.TextBlock;
-import com.google.android.gms.vision.text.TextRecognizer;
 
 import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.ViewModelProviders;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
@@ -29,153 +38,193 @@ public class VerifyIDActivity extends AppCompatActivity {
     ImageView mImageView;
     @BindView(R.id.infos)
     TextView infos;
-
-    public static final String PHOTO = "photo";
-
-    /**
-     * To detect the face on the ID card picture
-     */
-    private FaceDetector faceDetector;
+    @BindView(R.id.progressBar)
+    ProgressBar progressBar;
 
     /**
-     * To detect information on the ID card picture
+     * Request id
      */
-    private TextRecognizer textRecognizer;
+    public static final int MY_PERMISSIONS_REQUEST_CAMERA = 1;
 
+    /**
+     * The URI of the image on the file system
+     */
+    private Uri imageUri;
+
+    public VerifyIDViewModel viewModel;
+
+    @SuppressLint("CheckResult")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_verify_id);
 
-        ButterKnife.bind(this);
+        viewModel = ViewModelProviders.of(this).get(VerifyIDViewModel.class); // to inject the view model
 
-        Uri imageUri = getIntent().getParcelableExtra(PHOTO); // get the picture URI where we saved the picture in the previous activity
+        ButterKnife.bind(this); //to inject the view elements
 
-        Bitmap bitmap = null;
+        if (ContextCompat.checkSelfPermission(VerifyIDActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) { // Permission has not yet been granted
+            if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) { // if there is a camera
+                if (ActivityCompat.shouldShowRequestPermissionRationale(VerifyIDActivity.this, Manifest.permission.CAMERA)) {
+                    //In this case, the user rejected the first time, so we're showing an explanation to convict him then we retry
+                    //after that, while he's rejeting the prompt without checking the "Don't ask again", we will run this and it'll ask
+                    //him if he agree. Else, we run this but requestPermission will return reject automatically without asking him.
+                    print(VerifyIDActivity.this, "You rejected the permission"); //it doesn't appear because it is overridden by the next toast (convert it to modal box)
+                    requestPermission(); // request the permission
+                } else {
+                    requestPermission(); // No explanation needed; request the permission
+                }
+            } else { //no camera
+                print(VerifyIDActivity.this, "Your device is not compatible");
+            }
+        } else { // Permission has already been granted before
+            takePhoto();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_CAMERA: {
+                // If request is cancelled, the result arrays are empty so we check if it's not empty and if it was granted
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) { // permission was granted
+                    takePhoto();
+                } else { // permission denied
+                    print(VerifyIDActivity.this, "Too bad...");
+                }
+                break;
+            }
+        }
+    }
+
+    /**
+     * Method to take a photo.
+     */
+    public void takePhoto() {
+        ContentValues values = new ContentValues();
+        imageUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values); // to save the taken picture on the file system
+
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) { // if there's an app to take a photo
+            startActivityForResult(takePictureIntent, MY_PERMISSIONS_REQUEST_CAMERA); // we take the photo
+        } else {
+            print(VerifyIDActivity.this, "You don't have any app to take the photo...");
+        }
+
+    }
+
+    /**
+     * When the picture is taken, we extract the information and check it.
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == MY_PERMISSIONS_REQUEST_CAMERA && resultCode == RESULT_OK) { //if we respond to the photo request
+            // we have to save the image on the file system instead of get the bitmap with data.getExtras().get("data"); because Parcelable objects have a max size, in fact quality was lower and the text unreadable
+            checkInformation(imageUri);
+        }
+    }
+
+    /**
+     * Method to request permissions.
+     */
+    private void requestPermission() {
+        ActivityCompat.requestPermissions(
+                VerifyIDActivity.this,
+                new String[]{
+                        Manifest.permission.CAMERA, //to take a picture
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE // to save/delete it on the FileSystem
+                },
+                MY_PERMISSIONS_REQUEST_CAMERA
+        );
+    }
+
+    /**
+     * Method to print a message in a Toast
+     *
+     * @param activity the context where to print the Toast
+     * @param message  string to write in the Toast
+     */
+    public static void print(Context activity, String message) {
+        Toast.makeText(
+                activity,
+                message,
+                Toast.LENGTH_LONG
+        ).show();
+    }
+
+    /**
+     * Method to extract face picture and text information from the ID card picture
+     * and verify if the ID card number already exists.
+     *
+     * @param imageUri ID card picture URI
+     */
+    public void checkInformation(Uri imageUri) {
+        LiveData<DisplayedModel<IDCard>> idCardViewStateLiveData = viewModel.getIDCardViewState();
+        idCardViewStateLiveData.observe(this, idCardViewState -> { // subscribe to the livedata containing the result of the get request
+            if (idCardViewState.getErrorCode() == DisplayedModel.NOT_FOUND) { // if the user was not found in the database, we deny the access, we display a message and we take a second picture to verify the validity of the ID card
+                infos.setText("Accès refusé.");
+                viewModel.insert(idCardViewState.getSuccessObject().getLastName(), idCardViewState.getSuccessObject().getFirstName(), idCardViewState.getSuccessObject().getIDNumber());
+            } else if (idCardViewState.getErrorCode() == DisplayedModel.NO_ERROR) { // if there was no error, we display that the access is granted
+                infos.setText("Accès autorisé.");
+            } else { // in other cases, the error orgin can be anything but most of the cases, it can be caused by the lack of internet connection
+                tryAgain("Impossible de vérifier l'authenticité de l'utilisateur. Veuillez vérifier votre connexion.");
+            }
+        });
+
+        Bitmap picture;
         try {
-            bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri); // get the picture from the URI where we saved it
+            picture = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri); // get the picture from the URI where we saved it
+            getContentResolver().delete(imageUri, null, null); // delete the image after we've created the Bitmap because it is not useful anymore
         } catch (IOException e) {
             e.printStackTrace();
-        }
-        Frame frame = new Frame.Builder().setBitmap(bitmap).build(); // create a Frame to be used by both detectors
-
-        /* Récupération du text */
-        textRecognizer = new TextRecognizer.Builder(VerifyIDActivity.this).build(); // get the text recognizer
-
-        if (!textRecognizer.isOperational()) { //if the recognizer is not operational
-            TakePictureActivity.print(VerifyIDActivity.this, "Error text recognition"); // display an error message in a Toast
-        } else {
-            SparseArray<TextBlock> blocks = textRecognizer.detect(frame); // get every text detected TODO: methode bloquante, l'executer dans un thread et afficher un loading
-
-            StringBuilder resultingText = new StringBuilder(); // resulting text
-
-            int firstCharIndexToRemove; // used in the loop to store the first index of the string to remove
-            String stringToRemove, // used in the loop to store the string to remove
-                    foundValue, // used in the loop to store each line of text gotten from the recognizer
-                    stringToKeep; // used in the loop to store each parsed string to keep
-            Matcher regexMatcher; // used to get only the numerical values from a string thanks to regex
-
-            for (int i = 0; i < blocks.size(); i++) { // for each line of text, parse the line to extract useful values
-                foundValue = blocks.valueAt(i).getValue();
-                // remove unwanted chars
-                foundValue = foundValue.replace("(s", ""); // have to parse the 's' with another char for "Prenom(s):" because sometimes, special chars might not be recognized so we assure that we don't remove a 's' belonging to the first name
-                foundValue = foundValue.replace("s)", "");
-                foundValue = foundValue.replace("s:", "");
-                foundValue = foundValue.replace("(", "");
-                foundValue = foundValue.replace(")", "");
-                foundValue = foundValue.replace("'", "");
-                foundValue = foundValue.replace("é", "e");
-                foundValue = foundValue.replace(",", " ");
-                foundValue = foundValue.replace(".", " ");
-
-                if (foundValue.contains("Nom")) { //if the line contains a last name
-                    firstCharIndexToRemove = foundValue.lastIndexOf(":");
-                    stringToKeep = foundValue.substring(firstCharIndexToRemove>0? firstCharIndexToRemove+1 : 0); // try to remove every chars before the ':' included (that's why +1)
-
-                    firstCharIndexToRemove = stringToKeep.lastIndexOf(";");
-                    stringToKeep = stringToKeep.substring(firstCharIndexToRemove>0? firstCharIndexToRemove+1 : 0); // try to remove every chars before the ';' included (that's why +1)
-
-                    stringToRemove = "Nom";
-                    firstCharIndexToRemove = stringToKeep.lastIndexOf(stringToRemove);
-                    stringToKeep = stringToKeep.substring(firstCharIndexToRemove>0?firstCharIndexToRemove + stringToRemove.length() : 0); // try to remove every chars before the stringToRemove included (that's why + .length) if both previous methods failed because no ':'/';' were found
-
-                    stringToKeep = stringToKeep.toLowerCase(); // convert the rest to lower case
-                    stringToKeep = stringToKeep.trim(); // remove every space char around
-
-                    stringToKeep = stringToKeep.split(" ")[0]; // only get the first word found if spaces (to hide recognition problems)
-
-                    resultingText.append(stringToKeep).append("||");
-                }
-
-                if (foundValue.contains("Prenom")) { //if the line contains a first name
-                    firstCharIndexToRemove = foundValue.lastIndexOf(":");
-                    stringToKeep = foundValue.substring(firstCharIndexToRemove>0? firstCharIndexToRemove+1 : 0); // try to remove every chars before the ':' included (that's why +1)
-
-                    firstCharIndexToRemove = stringToKeep.lastIndexOf(";");
-                    stringToKeep = stringToKeep.substring(firstCharIndexToRemove>0? firstCharIndexToRemove+1 : 0); // try to remove every chars before the ';' included (that's why +1)
-
-                    stringToRemove = "Prenom";
-                    firstCharIndexToRemove = stringToKeep.lastIndexOf(stringToRemove);
-                    stringToKeep = stringToKeep.substring(firstCharIndexToRemove>0? firstCharIndexToRemove + stringToRemove.length() : 0); // try to remove every chars before the stringToRemove included (that's why + .length) if both previous methods failed because no ':'/';' were found
-
-                    stringToKeep = stringToKeep.toLowerCase(); // convert the rest to lower case
-                    stringToKeep = stringToKeep.trim(); // convert the rest to lower case
-
-                    stringToKeep = stringToKeep.split(" ")[0]; // only get the first word found if spaces (to hide recognition problems)
-
-                    resultingText.append(stringToKeep).append("||");
-                }
-
-                foundValue = foundValue.toLowerCase(); // convert the rest to lower case
-                foundValue = foundValue.replace(" ", ""); // remove every space remaining
-
-                if (foundValue.contains("cartenationaledidentiten")) { //if the line contains a ID card number
-                    firstCharIndexToRemove = foundValue.lastIndexOf(":");
-                    stringToKeep = foundValue.substring(firstCharIndexToRemove>0? firstCharIndexToRemove : 0); // try to remove every chars before the ':' included (that's why +1)
-
-                    firstCharIndexToRemove = stringToKeep.lastIndexOf(";");
-                    stringToKeep = stringToKeep.substring(firstCharIndexToRemove>0? firstCharIndexToRemove : 0); // try to remove every chars before the ';' included (that's why +1)
-
-                    stringToRemove = "cartenationaledidentiten";
-                    firstCharIndexToRemove = stringToKeep.lastIndexOf(stringToRemove);
-                    stringToKeep = stringToKeep.substring(firstCharIndexToRemove>0? firstCharIndexToRemove + stringToRemove.length() : 0); // try to remove every chars before the stringToRemove included (that's why + .length) if both previous methods failed because no ':'/';' were found
-
-                    regexMatcher = Pattern.compile("\\d+").matcher(stringToKeep); // get only the numerical resultingText
-                    if(regexMatcher.find()) { // if there is a numerical value in the string
-                        resultingText.append(regexMatcher.group()).append("||");
-                    }
-                }
-            }
-            infos.setText(resultingText.toString());
+            tryAgain("An error occured, try again.");
+            return;
         }
 
-        /* Récupération du visage */
-        faceDetector = new FaceDetector.Builder(this)
-                .setTrackingEnabled(false) //plus précis pour des images simples, pour une serie d'images consécutives (video) vaut mieux mettre true
-                .build();
+        Frame frame = new Frame.Builder().setBitmap(picture).build(); // create a Frame to be used by both detectors
 
-        if (!faceDetector.isOperational()) { //if the detector is not operational
-            TakePictureActivity.print(VerifyIDActivity.this, "Error face recognition"); //display an error in a toast
-        } else {
-            SparseArray<Face> faces = faceDetector.detect(frame); // detect every faces on the picture
-            if (faces.size() > 0) { //if there are faces detected
-                Face face = faces.valueAt(0); // get the first found face
-                bitmap = Bitmap.createBitmap(bitmap, Math.round(face.getPosition().x), Math.round(face.getPosition().y), Math.round(face.getWidth()), Math.round(face.getHeight())); // create a bitmap containing the face
-            }
-        }
+        /* Text extraction */
+        viewModel.extractText(frame)
+                .observe(this,
+                        card -> {
+                            if (card.getErrorCode() == DisplayedModel.NO_ERROR) {
+                                viewModel.verifyIDCard(card.getSuccessObject().getIDNumber()); // verify if this card number exists in the database, the livedata will be notified with the result
+                            } else {
+                                tryAgain(card.getErrorMessage());
+                            }
+                        });
 
-        mImageView.setImageBitmap(bitmap);
-        //TODO: lier un ViewModel relié au repo
-        //TODO: mettre dans le repo l'appel à Firebase pour chercher si les informations textuelles existent et mettre une fonction pour enregistrer les infos textuelles
+        /* Face detection */
+        viewModel.extractFace(frame, picture)
+                .observe(this,
+                        face -> {
+                            if (face.getErrorCode() == DisplayedModel.NO_ERROR) {
+                                mImageView.setImageBitmap(face.getSuccessObject());
+                                progressBar.setVisibility(View.INVISIBLE);
+                            } else {
+                                tryAgain(face.getErrorMessage());
+                            }
+                        });
+
         //TODO: si les infos ne sont pas trouvées alors prendre une autre photo et comparer la nouvelle photo avec celle qu'on a extrait de la carte
         //TODO: si les images matchent, enregistrer le text sur Firebase sinon message d'erreur et revenir à la première activité
+    }
+
+    /**
+     * Returns to the start activity and displays an error message in a Toast.
+     * @param message to display
+     */
+    public void tryAgain(String message) {
+        Intent intent = new Intent(VerifyIDActivity.this, StartActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP); //pop every activities from the stack to avoid unwanted behaviour when clicking "previous" button
+        startActivity(intent);
+        print(getApplication(), message); // inform the user what's the problem
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        textRecognizer.release(); //to release used ressources
-        faceDetector.release(); //to release used ressources
+        VerifyIDActivity.this.finish(); // to avoid the return button to come back here
     }
 }
