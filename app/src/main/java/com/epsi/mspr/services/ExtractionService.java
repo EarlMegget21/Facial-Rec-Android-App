@@ -21,7 +21,7 @@ import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 
-import static com.epsi.mspr.application.MainApplication.app;
+import static com.epsi.mspr.application.MainApplication.getApplication;
 
 @Singleton
 public class ExtractionService {
@@ -43,12 +43,12 @@ public class ExtractionService {
 
     @Inject
     public ExtractionService() {
-        /*this.faceDetector = new FaceDetector.Builder(app())
+        /*this.faceDetector = new FaceDetector.Builder(getApplication())
                 .setTrackingEnabled(false) //more accurate for simple images, for a sequence of images (video) better to set it true
                 .build();*/
-        this.textRecognizer = new TextRecognizer.Builder(app()).build(); // get the text recognizer
+        this.textRecognizer = new TextRecognizer.Builder(getApplication()).build(); // get the text recognizer
 
-        /*if (textRecognizer != null) { // peut être faire ça à la destruction du service (peut être pas besoin car c'est un Singleton donc il se detruit à l'arrêt de l'app) sinon construire les detector dans les viewmodel qui en ont besoin
+        /*if (textRecognizer != null) { // peut être faire ça à la destruction du service (peut être pas besoin car c'est un Singleton donc il se detruit à l'arrêt de l'getApplication) sinon construire les detector dans les viewmodel qui en ont besoin
             textRecognizer.release(); //to release used ressources
         }
         if (faceDetector != null) {

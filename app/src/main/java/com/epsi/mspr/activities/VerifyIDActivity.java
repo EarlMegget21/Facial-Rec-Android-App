@@ -120,7 +120,7 @@ public class VerifyIDActivity extends AppCompatActivity {
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) { // if there's an app to take a photo
             startActivityForResult(takePictureIntent, photoCode); // we take the photo
         } else {
-            tryAgain("You don't have any app to take the photo...");
+            tryAgain("You don't have any application to take the photo...");
         }
     }
 

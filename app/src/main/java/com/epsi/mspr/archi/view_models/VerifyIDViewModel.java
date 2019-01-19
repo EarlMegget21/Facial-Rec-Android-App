@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Application;
 import android.graphics.Bitmap;
 
+import com.epsi.mspr.application.MainApplication;
 import com.epsi.mspr.archi.repositories.IDRepository;
 import com.epsi.mspr.models.DisplayedModel;
 import com.epsi.mspr.models.IDCard;
@@ -21,8 +22,6 @@ import io.reactivex.Single;
 import io.reactivex.SingleOnSubscribe;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
-
-import static com.epsi.mspr.application.MainApplication.app;
 
 public class VerifyIDViewModel extends AndroidViewModel {
 
@@ -92,7 +91,7 @@ public class VerifyIDViewModel extends AndroidViewModel {
 
     public VerifyIDViewModel(Application application) {
         super(application);
-        app().getAppComponent().inject(this); // to inject the repository
+        MainApplication.getApplication().getAppComponent().inject(this); // to inject the repository
 
         LiveData<DisplayedModel<IDCard>> idCardLiveData = repository.getIDCard();
         this.idCard.addSource(idCardLiveData, idcard -> { // observe the repository livedata containing ID card info

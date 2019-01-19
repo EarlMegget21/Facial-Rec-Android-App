@@ -6,7 +6,7 @@ import javax.inject.Singleton;
 
 import dagger.Component;
 
-@Component(modules = {AppModule.class, ContextModule.class, BindModule.class}) //tableau des classes des modules (peut avoir plusieur modules)
+@Component(modules = {AppModule.class, BindModule.class}) //tableau des classes des modules (peut avoir plusieur modules)
 @Singleton //indique que ça sera un singleton
 public abstract class AppComponent { //représente l'injecteur (permet de fournir les instances quand on le spécifie). La classe héritant sera générée par Dagger lors du build. Toutes les methodes dessous seront implémentées. Les getters, setters, autres methodes seront générées
 

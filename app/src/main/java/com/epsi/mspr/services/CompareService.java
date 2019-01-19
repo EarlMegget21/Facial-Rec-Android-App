@@ -18,7 +18,7 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 
-import static com.epsi.mspr.application.MainApplication.app;
+import static com.epsi.mspr.application.MainApplication.getApplication;
 
 @Singleton
 public class CompareService {
@@ -47,7 +47,7 @@ public class CompareService {
     @SuppressLint("CheckResult")
     public Observable<Boolean> compareFaces(Bitmap idFace, Bitmap realFace) {
 
-        File file1 = new File(app().getCacheDir(), "file1");
+        File file1 = new File(getApplication().getCacheDir(), "file1");
         OutputStream os;
         FileOutputStream fos;
         try {
@@ -68,7 +68,7 @@ public class CompareService {
         int width = realFace.getWidth();
         int height = realFace.getHeight();
         realFace = Bitmap.createBitmap(realFace, 0, 0, width > 4096 ? 4096 : width, height > 4096 ? 4096 : height);
-        File file2 = new File(app().getCacheDir(), "file2");
+        File file2 = new File(getApplication().getCacheDir(), "file2");
         try {
             fos = new FileOutputStream(file2);
             os = new BufferedOutputStream(fos);
