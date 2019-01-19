@@ -5,25 +5,28 @@
 
     <uses-permission android:name="android.permission.INTERNET" /> <!-- to save the visitor's infos on Firebase -->
     <uses-permission android:name="android.permission.CAMERA" /> <!-- to take a picture -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /> <!-- to save the picture on the FileSystem -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
+    <!-- to save the picture on the FileSystem -->
     <application
+        android:name=".application.MainApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:name="com.epsi.mspr.application.MainApplication"
         android:theme="@style/MSPRTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name="com.epsi.mspr.activities.SplashActivity">
+        <activity android:name=".activities.SplashActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.epsi.mspr.activities.StartActivity" />
-        <activity android:name="com.epsi.mspr.activities.VerifyIDActivity" />
+        <activity android:name=".activities.StartActivity" />
+        <activity android:name=".activities.VerifyIDActivity" />
+        <activity android:name=".activities.FacePictureActivity"></activity>
     </application>
 
 </manifest>

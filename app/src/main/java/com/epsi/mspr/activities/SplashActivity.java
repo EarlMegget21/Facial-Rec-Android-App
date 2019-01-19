@@ -1,10 +1,11 @@
 package com.epsi.mspr.activities;
 
 import android.content.Intent;
-import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 
 import com.epsi.mspr.R;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 public class SplashActivity extends AppCompatActivity {
 
@@ -21,6 +22,6 @@ public class SplashActivity extends AppCompatActivity {
             SplashActivity.this.finish(); // to avoid the return button to come back here
         };
 
-        findViewById(R.id.imageView).postDelayed(task, 5000); //pour que le thread se termine à OnDestroy sinon (avec un Handler) il faudra l'arrêter à la mains
+        findViewById(R.id.result_icon).postDelayed(task, 5000); //pour que le thread se termine à OnDestroy sinon (avec un Handler) il faudra l'arrêter à la mains
     }
 }

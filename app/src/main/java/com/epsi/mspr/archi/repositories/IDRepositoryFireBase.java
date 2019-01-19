@@ -18,20 +18,20 @@ import io.reactivex.schedulers.Schedulers;
 public class IDRepositoryFireBase extends IDRepository {
 
     /**
-     * Service used to make http request to the REST API thanks to Retrofit
+     * Service used to make http requests to the REST API thanks to Retrofit
      */
-    private FirebaseAPIService service;
+    private FirebaseAPIService firebaseApi;
 
     @Inject
-    public IDRepositoryFireBase(FirebaseAPIService twitterService) {
+    public IDRepositoryFireBase(FirebaseAPIService service) {
         super();
-        service = twitterService;
+        firebaseApi = service;
     }
 
     @SuppressLint("CheckResult")
     @Override
     public void fetchIDCard(long cardNumber) {
-        service.listIDCards(cardNumber) //to execute the request in another thread (Exception otherwise)
+        firebaseApi.getIDCard(cardNumber) //to execute the request in another thread (Exception otherwise)
                 .subscribeOn(Schedulers.io()) //obligé sinon nous rejette avec Exception
                 .observeOn(AndroidSchedulers.mainThread()) //to treat the response in the UI thread allowing us to touch the view
                 .subscribe(
@@ -53,7 +53,7 @@ public class IDRepositoryFireBase extends IDRepository {
     @SuppressLint("CheckResult")
     @Override
     public void insert(IDCard card) {
-        service.addIDCard(card, card.getIDNumber())
+        firebaseApi.addIDCard(card, card.getIDNumber())
                 .subscribeOn(Schedulers.io()) //to execute the request in another thread (Exception otherwise)
                 .observeOn(AndroidSchedulers.mainThread()) //to treat the response in the UI thread allowing us to touch the view
                 .subscribe(

@@ -1,6 +1,5 @@
 package com.epsi.mspr.activities;
 
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
@@ -13,8 +12,8 @@ import butterknife.ButterKnife;
 
 public class StartActivity extends AppCompatActivity {
 
-    @BindView(R.id.buttonStartStart)
-    TextView buttonStartStart;
+    @BindView(R.id.buttonStart)
+    TextView buttonStart;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,8 +22,8 @@ public class StartActivity extends AppCompatActivity {
 
         ButterKnife.bind(this); //to inject the View objects
 
-        buttonStartStart.setOnClickListener(view -> {
-            Intent createIntent = new Intent((Context) StartActivity.this, VerifyIDActivity.class);
+        buttonStart.setOnClickListener(view -> {
+            Intent createIntent = new Intent(StartActivity.this, VerifyIDActivity.class);
             startActivity(createIntent);
         });
     }

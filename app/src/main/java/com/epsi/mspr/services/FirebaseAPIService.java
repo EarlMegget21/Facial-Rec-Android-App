@@ -19,7 +19,7 @@ public interface FirebaseAPIService {
      * @return observable containing the id card retrieved or null otherwise
      */
     @GET("idCards/{idCardNumber}.json")
-    Observable<IDCard> listIDCards(
+    Observable<IDCard> getIDCard(
             @Path("idCardNumber") long idCardNumber
     );
 

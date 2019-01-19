@@ -2,13 +2,11 @@ package com.epsi.mspr.services;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
+import android.graphics.PointF;
 import android.util.SparseArray;
 
-import com.epsi.mspr.models.DisplayedModel;
 import com.epsi.mspr.models.IDCard;
 import com.google.android.gms.vision.Frame;
-import com.google.android.gms.vision.face.Face;
-import com.google.android.gms.vision.face.FaceDetector;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
 
@@ -18,9 +16,8 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
 import io.reactivex.Single;
+import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 
@@ -32,18 +29,23 @@ public class ExtractionService {
     /**
      * To detect the face on the ID card picture
      */
-    private FaceDetector faceDetector;
+//    private FaceDetector faceDetector;
 
     /**
      * To detect information on the ID card picture
      */
     private TextRecognizer textRecognizer;
 
+    /**
+     * Representing the picture and useable by the API
+     */
+    private Frame frame;
+
     @Inject
     public ExtractionService() {
-        this.faceDetector = new FaceDetector.Builder(app())
+        /*this.faceDetector = new FaceDetector.Builder(app())
                 .setTrackingEnabled(false) //more accurate for simple images, for a sequence of images (video) better to set it true
-                .build();
+                .build();*/
         this.textRecognizer = new TextRecognizer.Builder(app()).build(); // get the text recognizer
 
         /*if (textRecognizer != null) { // peut être faire ça à la destruction du service (peut être pas besoin car c'est un Singleton donc il se detruit à l'arrêt de l'app) sinon construire les detector dans les viewmodel qui en ont besoin
@@ -55,15 +57,20 @@ public class ExtractionService {
     }
 
     /**
-     * Method to extract needed ID card info (first name, last name, card number) from the id card picture asynchronously
-     * @param frame representing the id crd picture
+     * To initialize the Frame object.
+     * @param bitmap picture to extract
+     */
+    public void createFrame(Bitmap bitmap) {
+        frame = new Frame.Builder().setBitmap(bitmap).build(); // create a Frame to be used by both detectors
+    }
+
+    /**
+     * Method to extract needed ID card info (first name, last name, card number) from the id card picture asynchronously.
      * @return livedata containing an object containing an error if the card number was unreadable or if the detection failed or the ID card info otherwise
      */
     @SuppressLint("CheckResult")
-    public LiveData<DisplayedModel<IDCard>> extractText(Frame frame){
-        MutableLiveData<DisplayedModel<IDCard>> liveData = new MutableLiveData<>();
-
-        Single.create(emitter -> {
+    public Single<IDCard> extractText() {
+        return Single.create((SingleOnSubscribe<IDCard>) emitter -> {
             if (!textRecognizer.isOperational()) { //if the recognizer is not operational
                 emitter.onError(new Throwable());
             } else {
@@ -152,33 +159,79 @@ public class ExtractionService {
             }
         })
                 .subscribeOn(Schedulers.io()) // to execute on a worker thread
-                .observeOn(AndroidSchedulers.mainThread()) // to execute the response on the main thread and manipulate the view
-                .subscribe(
-                        card -> {
-                            liveData.setValue(new DisplayedModel<>((IDCard) card, null, DisplayedModel.NO_ERROR)); // notify the livedata returned with the face
-                        },
-                        error ->{
-                            // notify the livedata returned with an error
-                            liveData.setValue(new DisplayedModel<>(null, "Une erreur est survenue lors de la récupération du visage sur la carte d'identité. Veuillez réessayer avec une photo plus nette.", DisplayedModel.OTHER));
-                        });
-
-        return liveData; //return a livedata to listen
+                .observeOn(AndroidSchedulers.mainThread()); // to execute the response on the main thread and manipulate the view
     }
 
     /**
-     * Method to extract face picture from the id card picture asynchronously
-     * @param frame representing the id crd picture
+     * Method to extract face picture from the id card picture asynchronously (Single version).
      * @param bitmap original bitmap used to create a new one with the face
      * @return livedata containing an object containing an error if the face detection failed or the new picture with only the face otherwise
      */
     @SuppressLint("CheckResult")
-    public LiveData<DisplayedModel<Bitmap>> extractFace (Frame frame, Bitmap bitmap){
-        MutableLiveData<DisplayedModel<Bitmap>> liveData = new MutableLiveData<>();
+    public Single<Bitmap> extractFace(Bitmap bitmap) {
+        return Single.create((SingleOnSubscribe<Bitmap>) emitter -> {
+            int nbFaces = 1,
+                    count = 0;
+            Bitmap configuredBitmap = bitmap.copy(Bitmap.Config.RGB_565, true); // the bitmap has to be in 565 to beh analysable
+            android.media.FaceDetector faceDetector1 = new android.media.FaceDetector(configuredBitmap.getWidth(), configuredBitmap.getHeight(), nbFaces);
+            android.media.FaceDetector.Face[] faces = new android.media.FaceDetector.Face[nbFaces];
+            PointF eyescenter = new PointF();
 
-        Single.create(emitter -> {
+            try {
+                count = faceDetector1.findFaces(configuredBitmap, faces);
+            } catch (Exception e) {
+                emitter.onError(new Throwable());
+            }
+
+            if (count > 0) { // check if we detect any faces
+                faces[0].getMidPoint(eyescenter);
+                float eyesdist = faces[0].eyesDistance();
+                int width = (int) eyesdist * 3,
+                        height = (int) (eyesdist * 4.5),
+                        upLeftX = (int) (eyescenter.x - (width / 2)),
+                        upLeftY = (int) (eyescenter.y - (height / 2));
+
+                if(upLeftY<0){
+                    upLeftY=0;
+                }
+                if(upLeftX<0){
+                    upLeftX=0;
+                }
+
+                int faceSize = upLeftY + height;
+                if(faceSize >bitmap.getHeight()){
+                    int diff = faceSize -bitmap.getHeight();
+                    height-=diff;
+                }
+
+                Bitmap faceBitmap = Bitmap.createBitmap(bitmap, upLeftX, upLeftY, width, height); // create a bitmap containing the face
+
+                emitter.onSuccess(faceBitmap); // ping success when I have a value
+            } else {
+                emitter.onError(new Throwable());
+            }
+        })
+                .subscribeOn(Schedulers.io()) // to execute on a worker thread
+                .observeOn(AndroidSchedulers.mainThread()); // to execute the response on the main thread and manipulate the view
+    }
+
+    /**
+     * Method to extract face picture from the id card picture asynchronously
+     *
+     * @param bitmap original bitmap used to create a new one with the face
+     * @return livedata containing an object containing an error if the face detection failed or the new picture with only the face otherwise
+     * @deprecated Very long...
+     */
+    /* @SuppressLint("CheckResult")
+    @Deprecated
+    public Single<Bitmap> extractFaceVisionAPI(Bitmap bitmap) {
+//        MutableLiveData<DisplayedModel<Bitmap>> liveData = new MutableLiveData<>();
+
+        return Single.create((SingleOnSubscribe<Bitmap>) emitter -> {
             if (!faceDetector.isOperational()) { //if the detector is not operational
                 emitter.onError(new Throwable());
             } else {
+
                 SparseArray<Face> faces = faceDetector.detect(frame); // detect every faces on the picture (long method)
 
                 if (faces.size() > 0) { //if there are faces detected
@@ -193,16 +246,9 @@ public class ExtractionService {
             }
         })
                 .subscribeOn(Schedulers.io()) // to execute on a worker thread
-                .observeOn(AndroidSchedulers.mainThread()) // to execute the response on the main thread and manipulate the view
-                .subscribe(
-                        faceFound -> {
-                            liveData.setValue(new DisplayedModel<>((Bitmap) faceFound, null, DisplayedModel.NO_ERROR)); // notify the livedata returned with the face
-                        },
-                        error->{
-                            // notify the livedata returned with an error
-                            liveData.setValue(new DisplayedModel<>(null, "Une erreur est survenue lors de la récupération des informations textuelles sur la carte d'identité. Veuillez réessayer avec une photo plus nette.", DisplayedModel.OTHER));
-                        });
+                .observeOn(AndroidSchedulers.mainThread()); // to execute the response on the main thread and manipulate the view
 
-        return liveData; //return a livedata to listen
-    }
+
+//        return liveData; //return a livedata to listen
+    }*/
 }

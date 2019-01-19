@@ -22,7 +22,7 @@
         app:srcCompat="@drawable/dark_logo" />
 
     <TextView
-        android:id="@+id/sloganStart"
+        android:id="@+id/actionInstruction"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -33,7 +33,7 @@
         android:textColor="@color/colorText"
         android:textSize="30sp"
         android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/textView2"
+        app:layout_constraintBottom_toTopOf="@+id/orientationInstruction"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
@@ -42,7 +42,7 @@
         android:layout_marginLeft="8dp" />
 
     <TextView
-        android:id="@+id/buttonStartStart"
+        android:id="@+id/buttonStart"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -60,11 +60,11 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView2"
+        app:layout_constraintTop_toBottomOf="@+id/orientationInstruction"
         android:layout_marginLeft="8dp" />
 
     <TextView
-        android:id="@+id/textView2"
+        android:id="@+id/orientationInstruction"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -73,20 +73,20 @@
         android:layout_marginBottom="8dp"
         android:gravity="right"
         android:text="Orienter le haut de la carte dans ce sens en paysage"
-        app:layout_constraintBottom_toTopOf="@+id/buttonStartStart"
-        app:layout_constraintEnd_toStartOf="@+id/imageView2"
+        app:layout_constraintBottom_toTopOf="@+id/buttonStart"
+        app:layout_constraintEnd_toStartOf="@+id/orientationArrow"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/sloganStart" />
+        app:layout_constraintTop_toBottomOf="@+id/actionInstruction" />
 
     <ImageView
-        android:id="@+id/imageView2"
+        android:id="@+id/orientationArrow"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:layout_marginRight="8dp"
-        app:layout_constraintBottom_toBottomOf="@+id/textView2"
-        app:layout_constraintEnd_toEndOf="@+id/sloganStart"
-        app:layout_constraintTop_toTopOf="@+id/textView2"
+        app:layout_constraintBottom_toBottomOf="@+id/orientationInstruction"
+        app:layout_constraintEnd_toEndOf="@+id/actionInstruction"
+        app:layout_constraintTop_toTopOf="@+id/orientationInstruction"
         app:srcCompat="@drawable/right_arrow" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
