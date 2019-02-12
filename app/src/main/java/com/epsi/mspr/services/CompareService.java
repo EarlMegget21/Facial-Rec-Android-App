@@ -2,6 +2,7 @@ package com.epsi.mspr.services;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -65,14 +66,17 @@ public class CompareService {
                 file1.getName(),
                 RequestBody.create(MediaType.parse("image"), file1));
 
+        Matrix matrix = new Matrix();
+
+        matrix.postRotate(90);
         int width = realFace.getWidth();
         int height = realFace.getHeight();
-        realFace = Bitmap.createBitmap(realFace, 0, 0, width > 4096 ? 4096 : width, height > 4096 ? 4096 : height);
+        Bitmap realFace1 = Bitmap.createBitmap(realFace, 0, 0, width > 4096 ? 4096 : width, height > 4096 ? 4096 : height, matrix, true);
         File file2 = new File(getApplication().getCacheDir(), "file2");
         try {
             fos = new FileOutputStream(file2);
             os = new BufferedOutputStream(fos);
-            realFace.compress(Bitmap.CompressFormat.JPEG, 10, os);
+            realFace1.compress(Bitmap.CompressFormat.JPEG, 10, os);
             os.close();
             fos.close();
         } catch (Exception e) {

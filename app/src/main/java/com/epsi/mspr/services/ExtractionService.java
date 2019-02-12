@@ -220,7 +220,6 @@ public class ExtractionService {
      *
      * @param bitmap original bitmap used to create a new one with the face
      * @return livedata containing an object containing an error if the face detection failed or the new picture with only the face otherwise
-     * @deprecated Very long...
      */
     /* @SuppressLint("CheckResult")
     @Deprecated

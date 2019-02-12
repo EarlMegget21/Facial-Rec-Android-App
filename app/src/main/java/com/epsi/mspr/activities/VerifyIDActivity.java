@@ -202,7 +202,7 @@ public class VerifyIDActivity extends AppCompatActivity {
     /**
      * Method to compare both face pictures to indicate if the visitor is the actual owner of the given ID card.
      */
-    public void compareFaces() {
+    private void compareFaces() {
         viewModel.getComparisonLiveData() // subscribe to treat the response
                 .observe(this,
                 face -> {

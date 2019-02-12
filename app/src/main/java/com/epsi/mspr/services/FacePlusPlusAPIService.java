@@ -18,7 +18,7 @@ public interface FacePlusPlusAPIService {
      */
     @POST("compare")
     @Multipart
-    Observable<Response > comparePictures(
+    Observable<Response> comparePictures(
             @Part("api_key") RequestBody api_key,
             @Part("api_secret") RequestBody api_secret,
             @Part MultipartBody.Part image_file1,
